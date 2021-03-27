@@ -5,8 +5,7 @@ from tomriddle import Fragments
 def test_permute():
 
     for riddle in riddler("iam", None):
-        r = [x for x in riddle if x > 0]
-        print(r)
+        print(riddle)
         # assert len(riddle) == len(answer)
         # for char in answer:
         #    assert riddle.count(char) == answer.count(char)
