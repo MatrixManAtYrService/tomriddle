@@ -1,14 +1,25 @@
 from tomriddle import riddler
 from tomriddle import Fragments
+from itertools import permutations
 
 
 def test_permute():
+    """SAT-solving is a rather messy way of generating permutations, but we
+    need to make sure that it at least does permutations before we start
+    throwing additional constraints at it."""
 
-    for riddle in riddler("iam", None):
-        print(riddle)
-        # assert len(riddle) == len(answer)
-        # for char in answer:
-        #    assert riddle.count(char) == answer.count(char)
+    answer = "iam"
+
+    # use itertools as an authority
+    expect_riddles = sorted(["".join(x) for x in permutations(answer)])
+
+    riddles = []
+    for riddle in riddler(answer, None):
+        riddles.append(riddle)
+
+    got_riddles = sorted(riddles)
+
+    assert expect_riddles == got_riddles
 
 
 def test_voldemort():

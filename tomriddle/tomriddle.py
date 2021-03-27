@@ -124,22 +124,28 @@ def riddler(answer, fragments, constraints=[]):
     # no_dupes = ~reduce(operator.or_, dupes)
 
     # at least one allocation per row
-    letters_represented = []
+    represented = []
     for row in rows:
-        letters_represented.append(reduce(operator.or_, row))
-    all_ins_covered = reduce(operator.and_, letters_represented)
+        represented.append(reduce(operator.or_, row))
+    all_outs_covered = reduce(operator.and_, represented)
+    printerr("all_outs:")
+    printerr(all_outs_covered)
 
     # at least one allocation per column
-    positions_represented = []
+    represented = []
     for column in columns:
-        positions_represented.append(reduce(operator.or_, row))
-    all_outs_covered = reduce(operator.and_, positions_represented)
+        represented.append(reduce(operator.or_, column))
+    all_ins_covered = reduce(operator.and_, represented)
+    printerr("all_ins:")
+    printerr(all_ins_covered)
 
     # not n+1 (or more) allocations (preserves bijection)
     crowdings = []
     for one_too_many in combinations(all_symbols, len(letters) + 1):
         crowdings.append(reduce(operator.and_, one_too_many))
     not_too_many = ~reduce(operator.or_, crowdings)
+    printerr("not_too_many:")
+    printerr(not_too_many)
 
     pre_cnf = all_ins_covered & all_outs_covered & not_too_many
     printerr("pre_cnf:")
@@ -156,20 +162,23 @@ def riddler(answer, fragments, constraints=[]):
     cnf = json.loads("[{}]".format(cnfstr))
     printerr(cnf)
 
-    # if the user has chosen to generate permutations the hard way
     if fragments is None and not constraints:
+
+        # add no constraints, just kick out permutations
         permute = pycosat.itersolve(cnf)
         while True:
             try:
 
                 # get a solution, treat symbols as integers
-                chosen = map(lambda x: int(str(x)), next(permute))
+                solution = next(permute)
+                chosen = list(map(lambda x: int(str(x)), solution))
 
                 # translate into a riddle string
                 chosen = filter(lambda x: x > 0, chosen)
                 lookup = symb_num2riddle_letter
                 riddle = "".join([lookup[sn] for sn in chosen])
-                IPython.embed()
+
+                print(riddle)
                 yield riddle
 
             except StopIteration:
