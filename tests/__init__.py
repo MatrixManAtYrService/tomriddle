@@ -1,1 +1,1 @@
-"""Unit test package for tom_riddle."""
+"""Unit test package for tomriddle."""

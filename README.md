@@ -3,11 +3,11 @@ Tom Riddle
 ==========
 
 
-.. image:: https://img.shields.io/pypi/v/tom_riddle.svg
-        :target: https://pypi.python.org/pypi/tom_riddle
+.. image:: https://img.shields.io/pypi/v/tomriddle.svg
+        :target: https://pypi.python.org/pypi/tomriddle
 
-.. image:: https://img.shields.io/travis/MatrixManAtYrService/tom_riddle.svg
-        :target: https://travis-ci.com/MatrixManAtYrService/tom_riddle
+.. image:: https://img.shields.io/travis/MatrixManAtYrService/tomriddle.svg
+        :target: https://travis-ci.com/MatrixManAtYrService/tomriddle
 
 .. image:: https://readthedocs.org/projects/tom-riddle/badge/?version=latest
         :target: https://tom-riddle.readthedocs.io/en/latest/?version=latest

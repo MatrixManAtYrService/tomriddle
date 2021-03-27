@@ -1,33 +1,7 @@
-from collections import namedtuple
-from pathlib import Path
-import json
-
 import pyphen
+from collections import namedtuple
 
 Fragments = namedtuple("Fragments", "syllables twoshort startend")
-
-
-def main(args):
-
-    try:
-        with open(args.corpus, "r") as f:
-            fragments = get_fragments_from(f)
-    except AttributeError:
-        fragments = get_default_fragments()
-
-    for i
-
-    print(words[0])
-    return args.input
-
-
-def riddler(fragments, constraints=[]):
-    """
-    Iterate on angrams constructed given fragments.
-
-    If constraints are provided, require that they appear as substrings
-    and in the given order (potentially with other material in between).
-    """
 
 
 def clean(in_word):
@@ -167,7 +141,5 @@ def gen_twoshort(corpus):
     return twoshort_count
 
 
-Args = namedtuple("namespace", "input")
 if __name__ == "__main__":
-    # main(Args("IAmLordVoldemort"))
     gen_default_fragments()
