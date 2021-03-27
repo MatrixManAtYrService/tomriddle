@@ -1,9 +1,11 @@
 from math import floor, log
 from collections import OrderedDict
-from sympy import symbols, simplify
+from sympy import Symbol
 import sympy.logic.boolalg as form
 from itertools import product
 from functools import reduce
+from pprint import pprint
+import json
 
 from .fragments import get_default_fragments, get_fragments_from, clean
 import pycosat
@@ -64,43 +66,72 @@ def riddler(answer, fragments, constraints=[]):
 
     # display numbers with 0 padding
     repr_width = floor(log(max(letter_numbers)))
+    symb_ct = max(letter_numbers) ** 2
 
     def numstr(num):
         template = "{:" + str(repr_width) + "}"
         return template.format(num)
 
-    symb_list = symbols(",".join(map(str, range(len(letters) ** 2))))
-
-    def symbstr(num):
-        return symb_list[num]
-
     # a symbol for each cell in the grid above
     pos2let2sym = OrderedDict()
     let2pos2sym = OrderedDict()
-    i = 0
-    for char_idx, char in enumerate(letters):
-        for idx in riddle_positions:
-            symb = symbols(f"{numstr(char_idx)}>{char}>{numstr(idx)}")
+    symstr2symnum = {}
+    columns = []
+    i = 1
+    for idx in riddle_positions:
+        column = []
+        for char_idx, char in enumerate(letters):
+
+            symb = Symbol(str(i))
+            symstr2symnum[i] = f"{numstr(char_idx)}>{char}>{numstr(idx)}"
             pos2let2sym.setdefault(idx, OrderedDict())[char_idx] = symb
             let2pos2sym.setdefault(char_idx, OrderedDict())[idx] = symb
+            column.append(symb)
+            i += 1
+        columns.append(column)
 
-            # symb = symbstr(idx)
-            # pos2let2sym.setdefault(idx, OrderedDict())[char_idx] = i
-            # let2pos2sym.setdefault(char_idx, OrderedDict())[idx] = i
-            # i += 1
+    pprint(symstr2symnum)
 
-    # expressions asserting that a letter is "here" and not "anywhere else"
-    column_uniqueness = set()
-    for riddle_idx, letter_num in product(riddle_positions, letter_numbers):
+    # no more than one allocation per column
+    column_uniqueness = []
+    for this_loc, this_letter in product(riddle_positions, letter_numbers):
 
         # if this allocation occurred
-        expr = pos2let2sym[riddle_idx][letter_num]
+        expr = pos2let2sym[this_loc][this_letter]
 
         # no other allocation occurred here
         for other_letter in letter_numbers:
-            if other_letter != letter_num:
-                expr |= ~let2pos2sym[other_letter][riddle_idx]
+            if other_letter != this_letter:
+                expr &= ~let2pos2sym[other_letter][this_loc]
 
-        column_uniqueness.add(expr)
+        # and this letter can't be anywhere else
+        for other_loc in riddle_positions:
+            if this_loc != other_loc:
+                expr &= ~pos2let2sym[other_loc][this_letter]
 
-    permutation_condition = print(reduce(lambda a, b: a & b, column_uniqueness))
+        column_uniqueness.append(expr)
+
+    pre_cnf = reduce(lambda a, b: a | b, column_uniqueness)
+
+    # no less than one allocation per column
+    every_letter = []
+    for choice in product(*columns):
+        expr = reduce(lambda a, b: a & b, choice)
+        every_letter.append(expr)
+    pop = reduce(lambda a, b: a | b, every_letter)
+    pre_cnf &= pop
+    print("pre_cnf:")
+    print(pre_cnf)
+
+    cnf = form.to_cnf(pre_cnf, force=True, simplify=True)
+    print("cnf:")
+    print(cnf)
+
+    cnfstr = str(cnf)
+    for target, result in [("(", "["), (")", "]"), ("|", ","), ("&", ","), ("~", "-")]:
+        cnfstr = cnfstr.replace(target, result)
+
+    cnf = json.loads("[{}]".format(cnfstr))
+    print(cnf)
+
+    return pycosat.itersolve(cnf)
