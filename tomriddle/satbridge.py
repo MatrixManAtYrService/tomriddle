@@ -3,8 +3,9 @@ import re
 
 from sympy.logic.boolalg import is_cnf, to_cnf
 from sympy.parsing.sympy_parser import parse_expr
-from sympy import Symbol
+from sympy import Symbol, Not
 
+from collections import namedtuple
 from tomriddle import cnf
 
 
@@ -16,33 +17,38 @@ from tomriddle import cnf
 syntax_map = {"(": "[", ")": "]", "|": ",", "&": ",", "~": "-"}
 
 
-def get_symbstr_map(symbols):
+class SymbolMapper:
     """
-    Given sympy sybols[A, B, C] return a map { "A":1, "B":2, "C":2 }
-    Used to complete the transformation from expression string to json
-    """
-
-    symbstr2int = {}
-    for i, symbol in enumerate(symbols, start=1):
-        symbstr2int[str(symbol)] = i
-
-    return symbstr2int
-
-
-def get_intsymb_map(symbols):
-    """
-    Given sympy sybols[A, B, C] return a map { "A":1, "B":2, "C":2 }
-    Used to complete the transformation from expression string to json
+    Initialize this with a list of all your symbols.
+    It translates between sympy Symbols strings and integers
     """
 
-    int2symb = {}
-    for i, symbol in enumerate(symbols, start=1):
-        int2symb[i] = symbol
+    def __init__(self, symbs):
+        self.symbols = symbs
+        self.symbstr2symb = {str(s): s for s in symbs}
+        self.symbstr2symb.update({str(~s): ~s for s in symbs})
+        self.symbstr2int = {str(s): i + 1 for i, s in enumerate(symbs)}
+        self.symbstr2int.update({str(~s): -(i + 1) for i, s in enumerate(symbs)})
 
-    return int2symb
+    def to_int(self, symb):
+        return self.symbstr2int[str(symb)]
+
+    def to_symb(self, it):
+
+        try:
+            i = int(it)
+            if i > 0:
+                return self.symbols[i - 1]
+            else:
+                return ~self.symbols[abs(i) - 1]
+        except ValueError:
+            return self.symbstr2symb[it]
+
+    def from_str(self, string):
+        return self.symbstr2symb[string]
 
 
-def expr_to_satfmt(expr, symbols):
+def expr_to_satfmt(expr, mapper):
     """
     Takes a sympy formula in CNF, return a list of lists of integers for
     use with pycosat
@@ -63,39 +69,26 @@ def expr_to_satfmt(expr, symbols):
     else:
         cnf_expr = expr
 
-    # I'm not sure if mutating the expression string to JSON and back is a good idea.
-    # If you're a sympy wizard, please show me the smarter way.
-    # test cmd: pytest -s tests/test_satbridge.py::test_tofrom_expr
+    # make list of lists of integers
+    clauses = []
+    for clause in cnf_expr.args:
+        if type(clause) in [Symbol, Not]:
+            clauses.append([mapper.to_int(clause)])
+        else:
+            clauses.append(list(map(mapper.to_int, clause.args)))
 
-    # make list of integers
-    cnf_str = str(cnf_expr)
-    translate = get_symbstr_map(symbols)
-    translate.update(syntax_map)
-
-    for target, result in translate.items():
-        cnf_str = cnf_str.replace(target, str(result))
-
-    return json.loads("[{}]".format(cnf_str))
+    return clauses
 
 
-def satfmt_to_expr(int_list, symbols, strings=None):
+def satfmt_to_expr(int_list, mapper, strings=None):
     """
     Takes a list of integers like pycosat needs, return a sympy expression
     """
 
-    # rehydrate symbols
-    int2symb = get_intsymb_map(symbols)
-
-    def getsymb(n):
-        if n > 0:
-            return int2symb[n]
-        else:
-            return ~int2symb[abs(n)]
-
     # build expr
     clauses = []
     for clause in int_list:
-        clauses.append(cnf.OR(map(getsymb, clause)))
+        clauses.append(cnf.OR(map(mapper.to_symb, clause)))
     expr = cnf.AND(clauses)
 
     return expr
@@ -133,12 +126,9 @@ def satout_to_str(int_list, symbols):
     Produce strings like "OHELL"
     """
 
-    regexpr = re.compile(r"^([0-9])+\.([^.]+)\.([0-9]+)$")
-
-    idx2str = []
-    length = 0
-
     # gather symbols and indices
+    idx2str = []
+    regexpr = re.compile(r"^([0-9])+\.([^.]+)\.([0-9]+)$")
     for true_symb_num in filter(lambda x: x > 0, int_list):
 
         # parse symbol string

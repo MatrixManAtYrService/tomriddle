@@ -14,8 +14,9 @@ def test_tofrom_expr():
         ]
     )
 
-    ints = satbridge.expr_to_satfmt(expr, symbs)
-    sameexpr = satbridge.satfmt_to_expr(ints, symbs)
+    mapper = satbridge.SymbolMapper(symbs)
+    ints = satbridge.expr_to_satfmt(expr, mapper)
+    sameexpr = satbridge.satfmt_to_expr(ints, mapper)
 
     assert expr == sameexpr
 
@@ -31,9 +32,22 @@ def test_to_satfmt():
         ]
     )
 
-    ints = satbridge.expr_to_satfmt(expr, symbs)
+    mapper = satbridge.SymbolMapper(symbs)
+    ints = satbridge.expr_to_satfmt(expr, mapper)
 
     assert ints == [[1, 2, 3], [4, 5, 6], [-4, -7]]
+
+
+def test_to_satfmt_singletons():
+
+    symbs = symbols("A,B,C")
+    a, b, c = symbs
+    expr = cnf.AND([a, b | c])
+
+    mapper = satbridge.SymbolMapper(symbs)
+    ints = satbridge.expr_to_satfmt(expr, mapper)
+
+    assert ints == [[1], [2, 3]]
 
 
 def test_to_str():
@@ -43,11 +57,11 @@ def test_to_str():
             "1.H.2", "1.E.2", "1.L.2", "2.L.2", "1.O.2",
             "1.H.3", "1.E.3", "1.L.3", "2.L.3", "1.O.3",
             "1.H.4", "1.E.4", "1.L.4", "2.L.4", "1.O.4"]
-    sat_out =  [ -1,  -2,  -3,  -4,   5,
-                  6,  -7,  -8,  -9, -10,
-                -11,  12, -13, -14, -15,
-                -16, -17,  18, -19, -20,
-                -21, -22, -23,  24, -25]
+    sat_out = [ -1,  -2,  -3,  -4,   5,
+                 6,  -7,  -8,  -9, -10,
+               -11,  12, -13, -14, -15,
+               -16, -17,  18, -19, -20,
+               -21, -22, -23,  24, -25]  # noqa
     # fmt: on
 
     symbs = symbols(strs)

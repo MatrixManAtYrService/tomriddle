@@ -4,23 +4,23 @@ import operator
 import sympy.logic.boolalg as form
 
 
-def AND(symbols):
-    return reduce(operator.and_, symbols)
+def AND(exprs):
+    return reduce(operator.and_, exprs)
 
 
-def OR(symbols, convert=False):
+def OR(exprs, convert=False):
 
     if convert:
         # this will be slow for many clauses
         # https://cs.stackexchange.com/a/41071/97082
-        return form.to_cnf(reduce(operator.or_, symbols), simplify=True, force=True)
+        return form.to_cnf(reduce(operator.or_, exprs), simplify=True, force=True)
     else:
-        return reduce(operator.or_, symbols)
+        return reduce(operator.or_, exprs)
 
 
 def max_n_true(symbols, n):
     """
-    Takes an iterable of symbles, returns a CNF clause which allows
+    Takes an iterable of symbols, returns a CNF clause which allows
     at most n of them to be true at once.
     """
 
@@ -34,7 +34,7 @@ def max_n_true(symbols, n):
 
 def min_n_true(symbols, n):
     """
-    Takes an iterable of symbles, returns a CNF clause which requires
+    Takes an iterable of symbols, returns a CNF clause which requires
     n of them to be true at once.
     """
 
@@ -44,3 +44,16 @@ def min_n_true(symbols, n):
         clauses.append(clause)
     expr = AND(clauses)
     return expr
+
+
+def from_dnf(expr, strategy="product"):
+    """
+    Takes a DNF expression and returns the equivalent CNF expression
+    """
+
+    in_terms = []
+    for clause in expr.args:
+        in_terms.append([term for term in clause.args])
+
+    out_terms = product(*in_terms)
+    return AND([OR(c) for c in out_terms])
