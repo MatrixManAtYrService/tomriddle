@@ -1,4 +1,5 @@
 from tomriddle import cnf
+from time import time
 from sympy import symbols
 import sympy.logic.boolalg as form
 from operator import invert
@@ -14,10 +15,8 @@ def test_max_n_true():
     symbs = symbols("a,b,c,d,e")
     mapper = satbridge.SymbolMapper(symbs)
 
-    ways_expr = cnf.max_n_true(symbs, 3)
-    ways_satin = satbridge.expr_to_satfmt(ways_expr, mapper)
-
-    ways = list(itersolve(ways_satin))
+    sat_in = cnf.max_n_true(symbs, 3, mapper=mapper)
+    ways = list(itersolve(sat_in))
 
     # none with more than three true
     for way in ways:
@@ -40,10 +39,8 @@ def test_min_n_true():
     symbs = symbols("a,b,c,d,e")
     mapper = satbridge.SymbolMapper(symbs)
 
-    ways_expr = cnf.min_n_true(symbs, 3)
-    ways_satin = satbridge.expr_to_satfmt(ways_expr, mapper)
-
-    ways = list(itersolve(ways_satin))
+    sat_in = cnf.min_n_true(symbs, 3, mapper=mapper)
+    ways = list(itersolve(sat_in))
 
     # none with more than three true
     for way in ways:
@@ -66,31 +63,41 @@ def dnf_equivalence(expr, symbs):
 
     # convert with sympy
     def control(expr):
-        return form.to_cnf(expr, simplify=True, force=True)
+        cnf_expr = form.to_cnf(expr, simplify=True, force=True)
+        sat_in = satbridge.expr_to_satfmt(cnf_expr, mapper)
+        return sat_in
 
     # convert with something I made up
-    experiment = cnf.from_dnf
+    def experiment(expr):
+        return cnf.from_dnf(expr, mapper)
 
     def get_solns(func):
 
         # make expression
-        cnf_expr = func(expr)
+        before = time()
+        cnf_clauses = func(expr)
 
         # find solutions
         solutions = []
-        sat_in = satbridge.expr_to_satfmt(cnf_expr, mapper)
-        for sat_out in itersolve(sat_in):
-            true_only = filter(lambda x: x > 0, sat_out)
-            expr_out = cnf.AND(map(mapper.to_symb, true_only))
-            solutions.append(expr_out)
+        for sat_out in itersolve(cnf_clauses):
+            true_only = list(filter(lambda x: x > 0, sat_out))
+            if true_only:
+                expr_out = cnf.AND(list(map(mapper.to_symb, true_only)))
+                solutions.append(expr_out)
 
-        return solutions
+        after = time()
+        return solutions, after - before
 
     # do they yield the same solutions?
-    experiment_solns = get_solns(experiment)
-    control_solns = get_solns(control)
+    experiment_solns, experiment_duration = get_solns(experiment)
+    control_solns, control_duration = get_solns(control)
 
-    # this a dumb way to assert equality, but expressions aren't sortable and order doesn't matter
+    print("control", control_duration, "seconds")
+    print("experiment", experiment_duration, "seconds")
+
+    # this an obnoxious way to assert equality,
+    # but expressions aren't hashable and order doesn't matter
+
     for c in control_solns:
         assert c in experiment_solns
 
@@ -100,6 +107,7 @@ def dnf_equivalence(expr, symbs):
 
 def test_dnf_a():
 
+    # which ways for every other one to be true
     symbs = symbols("a,b,c,d,e,f")
     a, b, c, d, e, f = symbs
     expr = (a & c & e) | (b & d & f)
@@ -108,10 +116,41 @@ def test_dnf_a():
 
 def test_dnf_b():
 
-    symbs = symbols("a,b,c,d,e,f,g,h,i")
+    # how many ways for 3 of these to be true?
+    symbs = symbols("a,b,c,d,e,f")
     microstates = []
-    for microstate in combinations(symbols("a,b,c,d,e,f,g,h,i"), 3):
+    for microstate in combinations(symbs, 2):
         microstates.append(cnf.AND(microstate))
     expr = cnf.OR(microstates)
 
     dnf_equivalence(expr, symbs)
+
+
+def test_dnf_c():
+
+    # how many ways for 3 of these to be true?
+    symbs = symbols("a,b,c,d,e,f,g")
+    a, b, c, d, e, f, g = symbs
+    expr = a | (b & ~c) | (a & c) | (d & ~e & ~f & g) | ~g
+
+    dnf_equivalence(expr, symbs)
+
+
+def test_bcd():
+
+    # how many ways for 3 consecurive of these to be true?
+    symbs = symbols("a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t")
+    mapper = satbridge.SymbolMapper(symbs)
+    a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t = symbs
+
+    straight_expr = (a & b & c) | (b & c & d) | (c & d & e) | (d & e & f) | (g & h & i)
+    straight = cnf.from_dnf(straight_expr, mapper=mapper)
+
+    max3 = cnf.max_n_true(symbs, 3, mapper=mapper)
+
+    sat_in = straight + max3
+    solutions = list(itersolve(sat_in))
+
+    nofalse = sorted([list(filter(lambda x: x > 0, y)) for y in solutions])
+    assert 5 == len(nofalse)
+    print(nofalse)

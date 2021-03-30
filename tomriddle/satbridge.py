@@ -48,7 +48,7 @@ class SymbolMapper:
         return self.symbstr2symb[string]
 
 
-def expr_to_satfmt(expr, mapper):
+def expr_to_satfmt(expr, mapper, convert_cnf=True):
     """
     Takes a sympy formula in CNF, return a list of lists of integers for
     use with pycosat
@@ -56,7 +56,7 @@ def expr_to_satfmt(expr, mapper):
 
     # ensure CNF
     cnf_expr = None
-    if not is_cnf(expr):
+    if convert_cnf and not is_cnf(expr):
         print(
             "Got a non-CNF expression, converting... (depending on the size and "
             "structure of the expression, this could take a prohibitively long time)"
