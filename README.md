@@ -28,7 +28,6 @@ But _most_ of them are going to be unpronouncable--so we're going to generate a 
 
 Under the hood it should go something like this:
 
-    import sympy as sp
     from pycosat import itersolve
     from tomriddle import cnf
 
