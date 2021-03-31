@@ -45,4 +45,4 @@ They constrain the solver so that it only creates solutions for which expression
 
     (A | B | ~C) & (D & ~E)
 
-It's at least feasible because adding a constraint just requires that you concatenate the lists.  We shall see how well it works in practice.
+It's at least feasible because adding a constraint just requires that you concatenate the lists.  No fancy symbolic hyjinks necessar.  We'll see how well it works in practice.
