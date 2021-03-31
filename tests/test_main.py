@@ -28,6 +28,10 @@ def test_voldemort():
     q = "Tom Marvolo Riddle"
     a = "iamlordvoldemort"
 
+    raise NotImplementedError(
+        "This currently has no chance of passing, fail explicitly so we don't waste user time"
+    )
+
     assert a in list(riddler(q, f))
 
 
@@ -41,6 +45,10 @@ def test_superfoo():
     q = "aaaabbbeeefinoooprrrsssttuuzz"
     a = "superfooisnotabarbutbazzesare"
 
+    raise NotImplementedError(
+        "This currently has no chance of passing, fail explicitly so we don't waste user time"
+    )
+
     assert a in list(riddler(f, q))
 
 
@@ -52,6 +60,10 @@ def test_superfoo_constraint():
     q = "aaaabbbeeefinoooprrrsssttuuzz"
     a1 = "superfooisnotabarbutbazzesare"
     a2 = "bazzesaresuperfoobutabarisnot"
+
+    raise NotImplementedError(
+        "This currently has no chance of passing, fail explicitly so we don't waste user time"
+    )
 
     # must contain "baz" and "foo" in that order
     answers = list(riddler(f, q), constraint=["baz", "foo"])

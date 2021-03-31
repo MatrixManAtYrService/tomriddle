@@ -9,6 +9,7 @@ import operator
 import json
 import sys
 
+from tomriddle import cnf, satbridge
 from .fragments import get_default_fragments, get_fragments_from, clean
 import pycosat
 
@@ -106,66 +107,28 @@ def riddler(answer, fragments, constraints=[]):
         list, zip(*columns)
     )  # transpose: https://stackoverflow.com/a/6473724/1054322
 
+    mapper = satbridge.SymbolMapper(all_symbols)
+
     print()
     pprint(display_key)
 
-    ## at least one allocation per column
-    # covers = []
-    # for cover in product(*columns):
-    #    expr = reduce(operator.and_, cover)
-    #    covers.append(expr)
-    # all_ins_covered = reduce(operator.or_, covers)
-    #
-    ## no more than one allocation per column
-    # dupes = []
-    # for column in columns:
-    #    for incom, patible in combinations(column, 2):
-    #        dupes.append((incom & patible))
-    # no_dupes = ~reduce(operator.or_, dupes)
-
-    # at least one allocation per row
-    represented = []
+    # no more than one allocation per row
+    permutation_constraints = []
     for row in rows:
-        represented.append(reduce(operator.or_, row))
-    all_outs_covered = reduce(operator.and_, represented)
-    printerr("all_outs:")
-    printerr(all_outs_covered)
+        permutation_constraints.extend(cnf.max_n_true(row, 1, mapper=mapper))
+        permutation_constraints.extend(cnf.min_n_true(row, 1, mapper=mapper))
 
-    # at least one allocation per column
-    represented = []
+    # exactly one allocation per column
     for column in columns:
-        represented.append(reduce(operator.or_, column))
-    all_ins_covered = reduce(operator.and_, represented)
-    printerr("all_ins:")
-    printerr(all_ins_covered)
+        permutation_constraints.extend(cnf.max_n_true(column, 1, mapper=mapper))
+        permutation_constraints.extend(cnf.min_n_true(column, 1, mapper=mapper))
 
-    # not n+1 (or more) allocations (preserves bijection)
-    crowdings = []
-    for one_too_many in combinations(all_symbols, len(letters) + 1):
-        crowdings.append(reduce(operator.and_, one_too_many))
-    not_too_many = ~reduce(operator.or_, crowdings)
-    printerr("not_too_many:")
-    printerr(not_too_many)
-
-    pre_cnf = all_ins_covered & all_outs_covered & not_too_many
-    printerr("pre_cnf:")
-    printerr(pre_cnf)
-
-    cnf = form.to_cnf(pre_cnf, force=True, simplify=True)
-    printerr("cnf:")
-    printerr(cnf)
-
-    cnfstr = str(cnf)
-    for target, result in [("(", "["), (")", "]"), ("|", ","), ("&", ","), ("~", "-")]:
-        cnfstr = cnfstr.replace(target, result)
-
-    cnf = json.loads("[{}]".format(cnfstr))
-    printerr(cnf)
-
+    # so far we've just defined a fancy permutation generator
     if fragments is None and not constraints:
 
-        # add no constraints, just kick out permutations
-        permute = pycosat.itersolve(cnf)
+        print(permutation_constraints)
+        permute = pycosat.itersolve(permutation_constraints)
+
         while True:
             try:
 
@@ -178,11 +141,10 @@ def riddler(answer, fragments, constraints=[]):
                 lookup = symb_num2riddle_letter
                 riddle = "".join([lookup[sn] for sn in chosen])
 
-                print(riddle)
                 yield riddle
 
             except StopIteration:
                 printerr("done")
-                break
+                return
     else:
         raise NotImplementedError("Hey Matt, write this part")

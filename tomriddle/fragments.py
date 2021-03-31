@@ -1,5 +1,9 @@
-import pyphen
+from pathlib import Path
 from collections import namedtuple
+from textwrap import dedent
+import json
+
+import pyphen
 
 Fragments = namedtuple("Fragments", "syllables twoshort startend")
 
@@ -41,12 +45,13 @@ def gen_default_fragments():
         "syllables": gen_syllables,
         "twoshort": gen_twoshort,
         "startend": gen_startend,
-    }:
+    }.items():
         fname = Path(__file__).parent / f"{generated_module}_g.py"
         content = json.dumps(func(words), sort_keys=True)
         with open(fname, "w") as f:
             f.write(
-                f'''
+                dedent(
+                    f'''
             import json
 
             def syllables():
@@ -55,6 +60,7 @@ def gen_default_fragments():
                     {content}
                  \'\'\')
             '''
+                )
             )
 
 
@@ -136,6 +142,7 @@ def gen_twoshort(corpus):
     for word, nextword in zip(corpus, corpus[1:]):
         if 2 < len(word) + len(nextword) < 6:
             twoshort = "".join([word, nextword])
+            twoshort_count.setdefault(twoshort, 1)
             twoshort_count[twoshort] += 1
 
     return twoshort_count

@@ -16,6 +16,7 @@ def test_max_n_true():
     mapper = satbridge.SymbolMapper(symbs)
 
     sat_in = cnf.max_n_true(symbs, 3, mapper=mapper)
+    print(sat_in)
     ways = list(itersolve(sat_in))
 
     # none with more than three true
@@ -23,6 +24,7 @@ def test_max_n_true():
         assert len(way) == len(symbs)
         true_symbs = list(filter(lambda x: x > 0, way))
         assert 3 >= len(true_symbs)
+        print(true_symbs)
 
     # one for each subset of size 0, 1, 2, or 3
     expect_num = (
@@ -40,6 +42,7 @@ def test_min_n_true():
     mapper = satbridge.SymbolMapper(symbs)
 
     sat_in = cnf.min_n_true(symbs, 3, mapper=mapper)
+    print(sat_in)
     ways = list(itersolve(sat_in))
 
     # none with more than three true
@@ -47,6 +50,7 @@ def test_min_n_true():
         assert len(way) == len(symbs)
         true_symbs = list(filter(lambda x: x > 0, way))
         assert 3 <= len(true_symbs)
+        print(true_symbs)
 
     # one for each subset of size 0, 1, 2, or 3
     expect_num = (
@@ -55,6 +59,21 @@ def test_min_n_true():
         + 1  # the full solution
     )
     assert expect_num == len(ways)
+
+
+def test_exactly_n_true():
+
+    symbs = symbols("a,b,c,d,e")
+    mapper = satbridge.SymbolMapper(symbs)
+
+    min_constraint = cnf.min_n_true(symbs, 2, mapper=mapper)
+    max_constraint = cnf.max_n_true(symbs, 2, mapper=mapper)
+
+    print(min_constraint)
+    print(max_constraint)
+
+    solutions = list(itersolve(min_constraint + max_constraint))
+    print("done")
 
 
 def dnf_equivalence(expr, symbs):
