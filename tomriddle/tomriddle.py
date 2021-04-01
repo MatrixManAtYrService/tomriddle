@@ -112,21 +112,24 @@ def riddler(answer, fragments, constraints=[]):
     print()
     pprint(display_key)
 
-    # no more than one allocation per row
+    # at least one allocation per row
     permutation_constraints = []
     for row in rows:
-        permutation_constraints.extend(cnf.max_n_true(row, 1, mapper=mapper))
         permutation_constraints.extend(cnf.min_n_true(row, 1, mapper=mapper))
 
-    # exactly one allocation per column
+    print(permutation_constraints)
+
+    # at least one allocation per column
     for column in columns:
-        permutation_constraints.extend(cnf.max_n_true(column, 1, mapper=mapper))
         permutation_constraints.extend(cnf.min_n_true(column, 1, mapper=mapper))
+
+    permutation_constraints.extend(
+        cnf.max_n_true(all_symbols, len(letters), mapper=mapper)
+    )
 
     # so far we've just defined a fancy permutation generator
     if fragments is None and not constraints:
 
-        print(permutation_constraints)
         permute = pycosat.itersolve(permutation_constraints)
 
         while True:

@@ -66,7 +66,7 @@ def max_n_true(variables, n, mapper=None):
     # make sat-friendly (if not already)
     payload = _to_list(variables, mapper)
 
-    # make a cnf expr
+    # make a cnf expr forbidding any of the ways to have too many
     clauses = []
     for microstate in combinations(payload, n + 1):
         clause = list(map(lambda x: -x, microstate))
@@ -76,29 +76,31 @@ def max_n_true(variables, n, mapper=None):
 
 def min_n_true(variables, n, mapper=None):
     """
-    Takes an iterable of  ints, or an iterable of Symbols and a mapper.
-    Returns a CNF expression n of them to be true at once.
+    Takes an iterable of ints, or an iterable of Symbols and a mapper.
+    Returns a CNF expression that requires n of them to be true at once.
     """
 
     # make sat-friendly (if not already)
     payload = _to_list(variables, mapper)
 
-    # make a cnf expr
+    # make a dnf expr: OR(AND(),AND(),...,AND())
+    # which lists the way for there to be enough true variables
     clauses = []
     for microstate in combinations(payload, n):
-        clauses.append(microstate)
-    return clauses
+        clauses.append(list(microstate))
+
+    # convert it to cnf: AND(OR(),OR(),...,OR())
+    return from_dnf(clauses)
 
 
 def from_dnf(dnf_clauses, mapper=None):
     """
-    Takes a DNF expression as a list of lists of ints and returns the
-    equivalent CNF expression as a list of list of ints.
+    Takes a DNF expression and returns a CNF expression
 
-    Sympy is rather slow at this.
+    (Sympy is rather slow at this)
 
     The first param can also be a sympy expression, but you'll still
-    get a list back.  A mapper is required for this.
+    get a list back.  If so, mapper is required.
     """
 
     if type(dnf_clauses) != list:
@@ -106,4 +108,7 @@ def from_dnf(dnf_clauses, mapper=None):
     else:
         clauses = dnf_clauses
 
-    return list(product(*clauses))
+    dedupe = {tuple(set(x)) for x in product(*clauses)}
+
+    print(dedupe)
+    return [list(x) for x in dedupe]

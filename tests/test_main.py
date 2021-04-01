@@ -1,5 +1,7 @@
+import pytest
 from tomriddle import riddler
 from tomriddle import Fragments
+
 from itertools import permutations
 
 
@@ -22,19 +24,17 @@ def test_permute():
     assert expect_riddles == got_riddles
 
 
+@pytest.mark.skip(reason="functionality not yet implemented")
 def test_voldemort():
 
     f = Fragments(["lor", "ord", "vol", "dem", "mort"], ["iam"], [])
     q = "Tom Marvolo Riddle"
     a = "iamlordvoldemort"
 
-    raise NotImplementedError(
-        "This currently has no chance of passing, fail explicitly so we don't waste user time"
-    )
-
     assert a in list(riddler(q, f))
 
 
+@pytest.mark.skip(reason="functionality not yet implemented")
 def test_superfoo():
 
     f = Fragments(
@@ -45,13 +45,10 @@ def test_superfoo():
     q = "aaaabbbeeefinoooprrrsssttuuzz"
     a = "superfooisnotabarbutbazzesare"
 
-    raise NotImplementedError(
-        "This currently has no chance of passing, fail explicitly so we don't waste user time"
-    )
-
     assert a in list(riddler(f, q))
 
 
+@pytest.mark.skip(reason="functionality not yet implemented")
 def test_superfoo_constraint():
 
     f = Fragments(
@@ -60,10 +57,6 @@ def test_superfoo_constraint():
     q = "aaaabbbeeefinoooprrrsssttuuzz"
     a1 = "superfooisnotabarbutbazzesare"
     a2 = "bazzesaresuperfoobutabarisnot"
-
-    raise NotImplementedError(
-        "This currently has no chance of passing, fail explicitly so we don't waste user time"
-    )
 
     # must contain "baz" and "foo" in that order
     answers = list(riddler(f, q), constraint=["baz", "foo"])

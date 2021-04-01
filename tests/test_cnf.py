@@ -69,11 +69,13 @@ def test_exactly_n_true():
     min_constraint = cnf.min_n_true(symbs, 2, mapper=mapper)
     max_constraint = cnf.max_n_true(symbs, 2, mapper=mapper)
 
-    print(min_constraint)
-    print(max_constraint)
-
     solutions = list(itersolve(min_constraint + max_constraint))
-    print("done")
+
+    assert len(list(combinations(symbs, 2))) == len(solutions)
+
+    for sol in solutions:
+        true_only = list(filter(lambda x: x > 0, sol))
+        assert 2 == len(true_only)
 
 
 def dnf_equivalence(expr, symbs):
