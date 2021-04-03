@@ -78,6 +78,52 @@ def test_exactly_n_true():
         assert 2 == len(true_only)
 
 
+def test_next_set():
+
+    # {5, 1, 8} is the largest set after deduplication, so it will be chosen from
+    begin = [[1, 2, 1], [3, 4], [5, 1, 8]]
+    expect = (frozenset({1, 5, 8}), set([frozenset({1, 2}), frozenset({3, 4})]))
+    result = cnf._next_set(begin)
+
+    assert expect == result
+
+
+def test_next_set_setinput():
+
+    begin = {frozenset([1, 2, 1]), frozenset([3, 4]), frozenset([5, 1, 8])}
+    expect = (frozenset({1, 5, 8}), set([frozenset({1, 2}), frozenset({3, 4})]))
+    result = cnf._next_set(begin)
+
+    assert expect == result
+
+
+def test_setproduct():
+
+    clauses = set(list(cnf._setproduct([[1, 2], [3, 4]])))
+
+    assert clauses == {
+        frozenset([1, 3]),
+        frozenset([1, 4]),
+        frozenset([2, 3]),
+        frozenset([2, 4]),
+    }
+
+
+def test_setproduct_moar():
+
+    terms = [[1, 2], [2, 3, 4], [5]]
+    sp = set(list(cnf._setproduct(terms)))
+
+    assert sp == {
+        frozenset([1, 2, 5]),
+        frozenset([1, 3, 5]),
+        frozenset([1, 4, 5]),
+        frozenset([2, 5]),
+        frozenset([2, 3, 5]),
+        frozenset([2, 4, 5]),
+    }
+
+
 def dnf_equivalence(expr, symbs):
 
     mapper = satbridge.SymbolMapper(symbs)

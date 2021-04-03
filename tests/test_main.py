@@ -24,6 +24,22 @@ def test_permute():
     assert expect_riddles == got_riddles
 
 
+def test_permute_long():
+
+    answer = "iamlo"
+    riddle_iter = riddler(answer, None)
+    riddle = next(riddle_iter)
+    print(riddle)
+
+
+def test_permute_too_long():
+
+    answer = "iamlor"
+    riddle_iter = riddler(answer, None)
+    riddle = next(riddle_iter)
+    print(riddle)
+
+
 @pytest.mark.skip(reason="functionality not yet implemented")
 def test_voldemort():
 

@@ -93,14 +93,53 @@ def min_n_true(variables, n, mapper=None):
     return from_dnf(clauses)
 
 
+def _next_set(args):
+    """
+    Deterministically take one element from a set of sets
+    """
+
+    # no dupes, deterministic order, larger sets first
+    items = sorted(list(map(frozenset, args)), key=lambda x: -len(x))
+    return items[0], set(items[1:])
+
+
+def _setproduct(argsets):
+    """
+    Like itertools.product, but iterates from a set of frozensets instead
+    of a list of tuples. In the from_dnf case below, that means fewer
+    duplicates to remove after the cross product is calculated. Recurses.
+
+    Omit 'current' to start recurion.  Otherwise use it to pass partial
+    clauses to the next stack frame.
+    """
+
+    # terminate recursion when no work remains
+    if sum(map(len, argsets)) == 0:
+        return frozenset({})
+
+    # otherwise gobble another set
+    current_set, next_sets = _next_set(argsets)
+
+    # recurse
+    subproduct = list(_setproduct(next_sets))
+
+    for element in current_set:
+        if not subproduct:
+            yield frozenset({element})
+        else:
+            for factor in subproduct:
+                yield frozenset({element}).union(factor)
+
+
 def from_dnf(dnf_clauses, mapper=None):
     """
     Takes a DNF expression and returns a CNF expression
 
-    (Sympy is rather slow at this)
-
     The first param can also be a sympy expression, but you'll still
     get a list back.  If so, mapper is required.
+
+    For large expression the pre-deduplicated step becomes intractiable
+    around four or five symbols, maybe this can be optimized.
     """
 
     if type(dnf_clauses) != list:
@@ -108,7 +147,4 @@ def from_dnf(dnf_clauses, mapper=None):
     else:
         clauses = dnf_clauses
 
-    dedupe = {tuple(set(x)) for x in product(*clauses)}
-
-    print(dedupe)
-    return [list(x) for x in dedupe]
+    return [list(x) for x in _setproduct(clauses)]
